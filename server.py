@@ -7,6 +7,11 @@ import digitalio
 import adafruit_ssd1306
 from PIL import Image, ImageDraw, ImageFont
 import threading as tr
+import serial
+from gpiozero import Servo
+
+servo = Servo(18)
+ser = serial.Serial("/dev/serial0", baudrate=9600, timeout=1)
 
 WIDTH = 128
 HEIGHT = 64
@@ -56,6 +61,8 @@ print("메시지 대기 중인 소켓")
 (conn, addr) = s.accept()
 print("연결됨")
 
+# OLED
+global oled_state
 oled_state = False
 
 
@@ -83,6 +90,72 @@ def OLED_OFF():
     print("oled off 끝")
 
 
+# 진동모터
+# def vibe():
+#     try:
+#         while 1:
+#             motor_pwm.start(20)
+#             print("pwm start")
+#             time.sleep(3)
+#             break
+#     except:
+#         print("error")
+#     motor_pwm.stop()
+#     GPIO.cleanup
+
+# CO2 측정 및 창문 개폐
+global window_open
+window_open = False
+
+
+def read_CO2():
+    ser.write(b"\xFF\x01\x86\x00\x00\x00\x00\x00\x79")
+    time.sleep(0.1)
+    response = ser.read(9)
+    if len(response) == 9 and response[0] == 0xFF and response[1] == 0x86:
+        co2_level = (response[2] << 8) + response[3]
+        return co2_level
+    else:
+        return None
+
+
+# 창문 열림
+def servo_open():
+    for i in range(1, 4):
+        servo.max()
+        time.sleep(1)
+    servo.value = None
+
+
+# 창문 닫힘
+def servo_close():
+    for i in range(1, 4):
+        servo.min()
+        time.sleep(1)
+    servo.value = None
+
+
+def co2():
+    global window_open
+    while True:
+        servo.value = None
+        co2 = read_CO2()
+        if co2 is not None:
+            print("co2농도: ", co2)
+            if co2 >= 2500 and window_open == False:
+                servo_open()
+                window_open = True
+            elif co2 < 2500 and window_open == True:
+                servo_close()
+                window_open = False
+        else:
+            print("데이터를 읽는데 문제가 발생했습니다.")
+        time.sleep(1)
+
+
+p2 = tr.Thread(target=co2)
+p2.start()
+print("thread2 생성")
 # 메시지 대기
 while True:
     data = conn.recv(1024)
@@ -92,8 +165,7 @@ while True:
     if data.decode("utf-8") == "sleep":
         print("sleep receive")
         OLED_ON()
-
+        # vibe()
 
 # 연결 닫기
 conn.close()
-p1.join()

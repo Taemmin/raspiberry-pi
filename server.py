@@ -69,6 +69,9 @@ print("기다리는 중")
 client_sock, addr = server_sock.accept()
 print("Connected by", addr)
 
+# GPIO 모드 설정
+GPIO.setmode(GPIO.BCM)
+
 # DC + sensor
 # 모터 상태
 STOP = 0
@@ -140,9 +143,6 @@ def setMotor(ch, speed, stat):
         # pwmB는 핀 설정 후 pwm 핸들을 리턴 받은 값이다.
         setMotorContorl(pwmB, IN3, IN4, speed, stat)
 
-
-# GPIO 모드 설정
-GPIO.setmode(GPIO.BCM)
 
 # 모터 핀 설정
 # 핀 설정후 PWM 핸들 얻어옴
@@ -250,15 +250,14 @@ def OLED_OFF():
 
 
 # #LED, 진동모터
+motor_pin = 12
+LED_pin = 25
+
+GPIO.setup(motor_pin, GPIO.OUT)
+GPIO.setup(LED_pin, GPIO.OUT)
+
+
 def vibe():
-    motor_pin = 12
-    LED_pin = 25
-
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(motor_pin, GPIO.OUT)
-    GPIO.setup(LED_pin, GPIO.OUT)
-
     for i in range(1, 11, 1):
         GPIO.output(motor_pin, GPIO.HIGH)
         GPIO.output(LED_pin, 1)
@@ -314,10 +313,12 @@ def co2():
             co2_str = str(co2) + "\n"  # CO2 값을 문자열로 변환
             co2_data = co2_str.encode("utf-8")  # 문자열을 바이트로 인코딩
             client_sock.send(co2_data)  # CO2 데이터를 클라이언트에게 전송
-            if co2 >= 2500 and window_open == False:
+            if co2 >= 2000 and window_open == False:
                 servo_open()
                 window_open = True
-            elif co2 < 2500 and window_open == True:
+                client_sock.send("2\n".encode("utf-8"))  # 창문개폐횟수 데이터를 클라이언트에게 전송
+                print("창문개폐횟수 보냄")
+            elif co2 < 2000 and window_open == True:
                 servo_close()
                 window_open = False
         else:
@@ -343,6 +344,12 @@ while True:
         OLED_ON()
         dc_sensor()
         vibe()
+        client_sock.send("1\n".encode("utf-8"))  # 졸음횟수 데이터를 클라이언트에게 전송
+        print("졸음횟수 보냄")
+    if data.decode("utf-8") == "front":
+        client_sock.send("3\n".encode("utf-8"))  # 전방미주시횟수 데이터를 클라이언트에게 전송
+        print("전방미주시횟수 보냄")
+
 
 # 연결 닫기
 conn.close()

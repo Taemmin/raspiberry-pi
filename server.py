@@ -43,6 +43,7 @@ HOST = "192.168.0.235"
 
 # 서버에서 사용할 포트 번호 (클라이언트와 일치해야 함)
 PORT = 12345
+PORT2 = 12344
 
 # 소켓 생성
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -59,6 +60,14 @@ s.listen(5)
 print("메시지 대기 중인 소켓")
 (conn, addr) = s.accept()
 print("연결됨")
+
+server_sock = socket.socket(socket.AF_INET)
+server_sock.bind((HOST, PORT2))
+server_sock.listen(2)
+
+print("기다리는 중")
+client_sock, addr = server_sock.accept()
+print("Connected by", addr)
 
 # DC + sensor
 # 모터 상태
@@ -302,6 +311,9 @@ def co2():
         co2 = read_CO2()
         if co2 is not None:
             print("co2농도: ", co2)
+            co2_str = str(co2) + "\n"  # CO2 값을 문자열로 변환
+            co2_data = co2_str.encode("utf-8")  # 문자열을 바이트로 인코딩
+            client_sock.send(co2_data)  # CO2 데이터를 클라이언트에게 전송
             if co2 >= 2500 and window_open == False:
                 servo_open()
                 window_open = True
@@ -316,6 +328,7 @@ def co2():
 p2 = tr.Thread(target=co2)
 p2.start()
 print("thread2 생성")
+
 setMotor(CH1, 100, FORWARD)
 setMotor(CH2, 100, FORWARD)
 

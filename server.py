@@ -255,6 +255,7 @@ LED_pin = 25
 
 GPIO.setup(motor_pin, GPIO.OUT)
 GPIO.setup(LED_pin, GPIO.OUT)
+GPIO.output(LED_pin, 0)
 
 
 def vibe():
@@ -288,17 +289,15 @@ def read_CO2():
 
 # 창문 열림
 def servo_open():
-    for i in range(1, 4):
-        servo.max()
-        time.sleep(1)
+    servo.min()
+    time.sleep(2.3)
     servo.value = None
 
 
 # 창문 닫힘
 def servo_close():
-    for i in range(1, 4):
-        servo.min()
-        time.sleep(1)
+    servo.max()
+    time.sleep(1.4)
     servo.value = None
 
 
@@ -341,11 +340,11 @@ while True:
     # 메시지 처리
     if data.decode("utf-8") == "sleep":
         print("sleep receive")
+        client_sock.send("1\n".encode("utf-8"))  # 졸음횟수 데이터를 클라이언트에게 전송
+        print("졸음횟수 보냄")
         OLED_ON()
         dc_sensor()
         vibe()
-        client_sock.send("1\n".encode("utf-8"))  # 졸음횟수 데이터를 클라이언트에게 전송
-        print("졸음횟수 보냄")
     if data.decode("utf-8") == "front":
         client_sock.send("3\n".encode("utf-8"))  # 전방미주시횟수 데이터를 클라이언트에게 전송
         print("전방미주시횟수 보냄")

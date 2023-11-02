@@ -65,7 +65,7 @@ server_sock = socket.socket(socket.AF_INET)
 server_sock.bind((HOST, PORT2))
 server_sock.listen(2)
 
-print("기다리는 중")
+print("안드로이드 기다리는 중")
 client_sock, addr = server_sock.accept()
 print("Connected by", addr)
 
@@ -289,15 +289,15 @@ def read_CO2():
 
 # 창문 열림
 def servo_open():
-    servo.min()
-    time.sleep(2.3)
+    servo.max()
+    time.sleep(1.7)
     servo.value = None
 
 
 # 창문 닫힘
 def servo_close():
-    servo.max()
-    time.sleep(1.4)
+    servo.min()
+    time.sleep(2.15)
     servo.value = None
 
 

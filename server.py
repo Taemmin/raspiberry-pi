@@ -32,50 +32,31 @@ draw = ImageDraw.Draw(image)
 draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
 padding = 0
 top = padding
-bottom = oled.height - 40
+bottom = oled.height-40
 x = 33
 # font = ImageFont.load_default()
-font1 = ImageFont.truetype("godoMaum.ttf", FONTSIZE)
-font2 = ImageFont.truetype("godoMaum.ttf", FONTSIZE - 6)
+font1 = ImageFont.truetype('godoMaum.ttf', FONTSIZE)
+font2 = ImageFont.truetype('godoMaum.ttf', FONTSIZE-6)
 
 # 서버의 IP 주소 또는 호스트 이름
-HOST = "192.168.0.235"
+HOST = '192.168.0.235' 
 
 # 서버에서 사용할 포트 번호 (클라이언트와 일치해야 함)
 PORT = 12345
-PORT2 = 12344
 
 # 소켓 생성
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("소켓 생성됨")
+#socket생성 후 listen상태 만들기
+server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+server_socket.bind((HOST,PORT))
+server_socket.listen(5)
 
-# 오류 예외 처리 관리
-try:
-    s.bind((HOST, PORT))
-except socket.error:
-    print("바인드 실패")
-
-# 클라이언트의 연결을 대기하는 소켓
-s.listen(5)
-print("메시지 대기 중인 소켓")
-(conn, addr) = s.accept()
-print("연결됨")
-
-server_sock = socket.socket(socket.AF_INET)
-server_sock.bind((HOST, PORT2))
-server_sock.listen(2)
-
-print("안드로이드 기다리는 중")
-client_sock, addr = server_sock.accept()
-print("Connected by", addr)
-
-# GPIO 모드 설정
+# GPIO 모드 설정 
 GPIO.setmode(GPIO.BCM)
 
 # DC + sensor
 # 모터 상태
-STOP = 0
-FORWARD = 1
+STOP  = 0
+FORWARD  = 1
 BACKWORD = 2
 
 # 모터 채널
@@ -91,61 +72,58 @@ HIGH = 1
 LOW = 0
 
 # 실제 핀 정의
-# PWM PIN
-ENA = 26  # 37 pin
-ENB = 0  # 27 pin
+#PWM PIN
+ENA = 26  #37 pin
+ENB = 0   #27 pin
 
-# GPIO PIN
-IN1 = 19  # 37 pin
-IN2 = 13  # 35 pin
-IN3 = 6  # 31 pin
-IN4 = 5  # 29 pin
-
+#GPIO PIN
+IN1 = 19  #37 pin
+IN2 = 13  #35 pin
+IN3 = 6   #31 pin
+IN4 = 5   #29 pin
 
 # 핀 설정 함수
-def setPinConfig(EN, INA, INB):
+def setPinConfig(EN, INA, INB):        
     GPIO.setup(EN, GPIO.OUT)
     GPIO.setup(INA, GPIO.OUT)
     GPIO.setup(INB, GPIO.OUT)
-    # 100khz 로 PWM 동작 시킴
-    pwm = GPIO.PWM(EN, 100)
-    # 우선 PWM 멈춤.
-    pwm.start(0)
+    # 100khz 로 PWM 동작 시킴 
+    pwm = GPIO.PWM(EN, 100) 
+    # 우선 PWM 멈춤.   
+    pwm.start(0) 
     return pwm
-
 
 # 모터 제어 함수
 def setMotorContorl(pwm, INA, INB, speed, stat):
-    # 모터 속도 제어 PWM
-    pwm.ChangeDutyCycle(speed)
 
+    #모터 속도 제어 PWM
+    pwm.ChangeDutyCycle(speed)  
+    
     if stat == FORWARD:
         GPIO.output(INA, HIGH)
         GPIO.output(INB, LOW)
-
-    # 뒤로
+        
+    #뒤로
     elif stat == BACKWORD:
         GPIO.output(INA, LOW)
         GPIO.output(INB, HIGH)
-
-    # 정지
+        
+    #정지
     elif stat == STOP:
         GPIO.output(INA, LOW)
         GPIO.output(INB, LOW)
-
-
+        
 # 모터 제어함수 간단하게 사용하기 위해 한번더 래핑(감쌈)
 def setMotor(ch, speed, stat):
     if ch == CH1:
-        # pwmA는 핀 설정 후 pwm 핸들을 리턴 받은 값이다.
+        #pwmA는 핀 설정 후 pwm 핸들을 리턴 받은 값이다.
         setMotorContorl(pwmA, IN1, IN2, speed, stat)
     else:
-        # pwmB는 핀 설정 후 pwm 핸들을 리턴 받은 값이다.
+        #pwmB는 핀 설정 후 pwm 핸들을 리턴 받은 값이다.
         setMotorContorl(pwmB, IN3, IN4, speed, stat)
-
-
-# 모터 핀 설정
-# 핀 설정후 PWM 핸들 얻어옴
+  
+#모터 핀 설정
+#핀 설정후 PWM 핸들 얻어옴 
 pwmA = setPinConfig(ENA, IN1, IN2)
 pwmB = setPinConfig(ENB, IN3, IN4)
 
@@ -169,21 +147,17 @@ print("Waiting for sensor to settle")
 GPIO.output(TRIG, False)
 time.sleep(1)
 
-
 def dcmotor1():
     setMotor(CH1, 70, FORWARD)
     setMotor(CH2, 70, FORWARD)
-
-
+    
 def dcmotor2():
     setMotor(CH1, 50, FORWARD)
     setMotor(CH2, 50, FORWARD)
-
-
+    
 def dcmotor3():
     setMotor(CH1, 100, STOP)
     setMotor(CH2, 100, STOP)
-
 
 def dc_sensor():
     # 초음파 센서에 초음파 신호를 보냅니다.
@@ -208,7 +182,7 @@ def dc_sensor():
 
     # 0.4초 동안 대기한 후 다음 측정을 수행합니다.
     time.sleep(0.4)
-
+    
     if distance >= 15 and distance <= 20:
         dcmotor1()
     elif distance >= 10 and distance < 15:
@@ -219,11 +193,9 @@ def dc_sensor():
         setMotor(CH1, 100, FORWARD)
         setMotor(CH2, 100, FORWARD)
 
-
 # OLED
 global oled_state
 oled_state = False
-
 
 def OLED_ON():
     draw.text((x, top), "warning!!!", font=font1, fill=255)
@@ -236,8 +208,7 @@ def OLED_ON():
         print("thread 생성")
         p1 = tr.Thread(target=OLED_OFF)
         p1.start()
-
-
+    
 def OLED_OFF():
     global oled_state
     oled_state = True
@@ -248,7 +219,6 @@ def OLED_OFF():
     oled_state = False
     print("oled off 끝")
 
-
 # #LED, 진동모터
 motor_pin = 12
 LED_pin = 25
@@ -256,7 +226,6 @@ LED_pin = 25
 GPIO.setup(motor_pin, GPIO.OUT)
 GPIO.setup(LED_pin, GPIO.OUT)
 GPIO.output(LED_pin, 0)
-
 
 def vibe():
     for i in range(1, 11, 1):
@@ -267,17 +236,17 @@ def vibe():
         GPIO.output(LED_pin, 0)
         time.sleep(0.3)
 
-
 # CO2 측정 및 창문 개폐
 servo = Servo(18)
-ser = serial.Serial("/dev/serial0", baudrate=9600, timeout=1)
+ser = serial.Serial('/dev/serial0', baudrate=9600, timeout=1)
+
+socket Android_socket = None
 
 global window_open
 window_open = False
 
-
 def read_CO2():
-    ser.write(b"\xFF\x01\x86\x00\x00\x00\x00\x00\x79")
+    ser.write(b'\xFF\x01\x86\x00\x00\x00\x00\x00\x79')
     time.sleep(0.1)
     response = ser.read(9)
     if len(response) == 9 and response[0] == 0xFF and response[1] == 0x86:
@@ -286,13 +255,11 @@ def read_CO2():
     else:
         return None
 
-
 # 창문 열림
 def servo_open():
-    servo.max()
+    servo.max() 
     time.sleep(1.7)
     servo.value = None
-
 
 # 창문 닫힘
 def servo_close():
@@ -300,55 +267,91 @@ def servo_close():
     time.sleep(2.15)
     servo.value = None
 
-
 # CO2 측정 후 창문개폐
 def co2():
     global window_open
+    global co2_str
     while True:
         servo.value = None
         co2 = read_CO2()
         if co2 is not None:
             print("co2농도: ", co2)
-            co2_str = str(co2) + "\n"  # CO2 값을 문자열로 변환
-            co2_data = co2_str.encode("utf-8")  # 문자열을 바이트로 인코딩
-            client_sock.send(co2_data)  # CO2 데이터를 클라이언트에게 전송
             if co2 >= 2000 and window_open == False:
                 servo_open()
                 window_open = True
-                client_sock.send("2\n".encode("utf-8"))  # 창문개폐횟수 데이터를 클라이언트에게 전송
+                client_socket.send("2\n".encode("utf-8"))  # 창문개폐횟수 데이터를 클라이언트에게 전송
                 print("창문개폐횟수 보냄")
             elif co2 < 2000 and window_open == True:
                 servo_close()
                 window_open = False
         else:
-            print("데이터를 읽는데 문제가 발생했습니다.")
+            print('데이터를 읽는데 문제가 발생했습니다.')
         time.sleep(1)
 
+#thread를 생성하는 threaded함수 구현
+def threaded(client_socket):
+    
+    global Android_socket
+    
+    print('thread Connected')
+    while True:
+        try:
+            co2 = read_CO2()
+            data = client_socket.recv(1024) #client가 보낸 메세지를 받아 data에 저장
+            print('Received from : [', data.decode(), ']') #받은 데이터 출력
+            if data.decode('utf-8') == 'sleep':
+                print("sleep receive")
+                if Android_socket is not None:
+                    print("안드로이드에 sleep 보냄")
+                    Android_socket.send("1\n".encode("utf-8"))  # 졸음횟수 데이터를 클라이언트에게 전송
+                print("졸음횟수 보냄")
+                OLED_ON()
+                dc_sensor()
+                vibe()
+            
+            if data.decode('utf-8') == 'front':
+                if Android_socket is not None:
+                    print("안드로이드에 front 보냄")
+                    Android_socket.send("3\n".encode("utf-8"))  # 전방미주시횟수 데이터를 클라이언트에게 전송
+                print("전방미주시횟수 보냄")
+            
+            if data.decode('utf-8') not in 'AndroidMessage':
+                print("안드로이드 소켓 저장")
+                co2_str = str(co2) + "\n"  # CO2 값을 문자열로 변환
+                co2_data = co2_str.encode("utf-8")  # 문자열을 바이트로 인코딩
+                Android_socket = client_socket
+                client_socket.send(co2_data)  # CO2 데이터를 클라이언트에게 전송
+                print("co2값 보냄")
+                
+            if not data:
+                print('Disconnected by ')
+                break
+
+            #client에 받은 데이터 재전송
+            client_socket.send(data)
+
+        #conncetcionError의 서브클래스로, 연결 시도가 상대방에 의해 중단될 때 발생.
+        except ConnectionResetError as e:
+            print('Disconnected by ')
+            break
+
+    #client와 연결 끊음    
+    client_socket.close()
+
+
+setMotor(CH1, 100, FORWARD)
+setMotor(CH2, 100, FORWARD)
 
 p2 = tr.Thread(target=co2)
 p2.start()
 print("thread2 생성")
 
-setMotor(CH1, 100, FORWARD)
-setMotor(CH2, 100, FORWARD)
 
 # 메시지 대기
 while True:
-    data = conn.recv(1024)
-    print("받은 메시지에 대한 응답을 전송했습니다: " + data.decode("utf-8"))
-
-    # 메시지 처리
-    if data.decode("utf-8") == "sleep":
-        print("sleep receive")
-        client_sock.send("1\n".encode("utf-8"))  # 졸음횟수 데이터를 클라이언트에게 전송
-        print("졸음횟수 보냄")
-        OLED_ON()
-        dc_sensor()
-        vibe()
-    if data.decode("utf-8") == "front":
-        client_sock.send("3\n".encode("utf-8"))  # 전방미주시횟수 데이터를 클라이언트에게 전송
-        print("전방미주시횟수 보냄")
-
-
-# 연결 닫기
-conn.close()
+    print('wait')
+    client_socket,addr = server_socket.accept()
+    print("연결됨")
+    thread1 = tr.Thread(target=threaded, args = (client_socket,))
+    thread1.start()
+    print("thread 생성")
